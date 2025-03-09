@@ -8,6 +8,15 @@ interface TSNEPoint {
   path: string;
   top_terms: string[];
   cluster: number; // Cluster ID (-1 means noise/not clustered)
+  
+  // Additional metadata
+  mtime?: number;      // Last modified time
+  ctime?: number;      // Creation time
+  wordCount?: number;  // Word count
+  readingTime?: number; // Estimated reading time in minutes  
+  tags?: string[];     // Note tags
+  contentPreview?: string; // Short preview of content
+  distanceToCenter?: number; // Distance to cluster center
 }
 
 // Interface for cluster term information
@@ -43,8 +52,8 @@ export class TSNEVisualizer {
   private canvas: HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D;
   private result: TSNEResult | null = null;
-  private width = 1600;  // Increased from 800 to 1600
-  private height = 700;  // Increased from 600 to 700
+  private width = 1600;  // Reduced width to avoid horizontal scrolling
+  private height = 700;  // Slightly reduced height to minimize vertical scrolling
   private pointRadius = 10;
   private mouseX = 0;
   private mouseY = 0;
@@ -70,10 +79,17 @@ export class TSNEVisualizer {
     this.canvas.classList.add('tsne-canvas');
     this.canvas.style.border = '1px solid var(--background-modifier-border)';
     
-    // Center the canvas in the container
+    // Allow the canvas to extend beyond the viewport with scrolling
     this.canvas.style.display = 'block';
-    this.canvas.style.marginLeft = 'auto';
-    this.canvas.style.marginRight = 'auto';
+    this.canvas.style.minWidth = this.width + 'px';
+    this.canvas.style.minHeight = this.height + 'px';
+    this.canvas.style.margin = '0 auto'; // Center the canvas horizontally
+    
+    // Container takes full width but allows scrolling for overflow
+    this.container.style.width = '100%';
+    this.container.style.height = '100%';
+    this.container.style.overflow = 'auto';
+    this.container.style.textAlign = 'center'; // Center the canvas within the container
     
     const context = this.canvas.getContext('2d');
     if (!context) {
@@ -940,6 +956,11 @@ export class TSNEVisualizer {
         break;
     }
     
+    // Get additional metadata if available
+    const wordCount = this.hoveredPoint.wordCount ? `${this.hoveredPoint.wordCount} words` : '';
+    const readingTime = this.hoveredPoint.readingTime ? `~${this.hoveredPoint.readingTime} min read` : '';
+    const contentPreview = this.hoveredPoint.contentPreview ? this.hoveredPoint.contentPreview : '';
+    
     // Prepare text
     this.ctx.font = 'bold 14px var(--font-text)';
     const titleWidth = this.ctx.measureText(title).width;
@@ -947,17 +968,18 @@ export class TSNEVisualizer {
     this.ctx.font = '12px var(--font-text)';
     const pathWidth = this.ctx.measureText(path).width;
     const termsWidth = this.ctx.measureText(`Keywords: ${terms}`).width;
-    const clusterWidth = this.ctx.measureText(`Cluster: ${clusterInfo}`).width;
+    const clusterWidth = this.ctx.measureText(`Cluster: ${colorInfo}`).width;
+    const previewWidth = contentPreview ? this.ctx.measureText(`Preview: ${contentPreview.substring(0, 50)}...`).width : 0;
     
     // Calculate tooltip dimensions
-    const tooltipWidth = Math.max(titleWidth, pathWidth, termsWidth, clusterWidth) + 20;
-    const tooltipHeight = 95; // Increased height for the cluster info
+    const tooltipWidth = Math.max(titleWidth, pathWidth, termsWidth, clusterWidth, previewWidth) + 20;
+    const tooltipHeight = contentPreview ? 135 : 95; // Increased height if we have preview text
     const tooltipX = Math.min(x + 10, this.width - tooltipWidth - 10);
     const tooltipY = Math.min(y - 10, this.height - tooltipHeight - 10);
     
-    // Draw tooltip background
-    this.ctx.fillStyle = 'var(--background-primary)';
-    this.ctx.strokeStyle = 'var(--background-modifier-border)';
+    // Draw tooltip background with a solid color (more reliable)
+    this.ctx.fillStyle = 'rgba(245, 245, 250, 0.95)';
+    this.ctx.strokeStyle = 'rgba(150, 150, 160, 0.8)';
     this.ctx.lineWidth = 1;
     
     this.roundRect(tooltipX, tooltipY, tooltipWidth, tooltipHeight, 5);
@@ -965,17 +987,42 @@ export class TSNEVisualizer {
     this.ctx.stroke();
     
     // Draw tooltip content
-    this.ctx.fillStyle = 'var(--text-normal)';
     this.ctx.textAlign = 'left';
     
-    this.ctx.font = 'bold 14px var(--font-text)';
+    // Title with bold and dark color
+    this.ctx.font = 'bold 14px sans-serif';
+    this.ctx.fillStyle = '#0066cc';
     this.ctx.fillText(title, tooltipX + 10, tooltipY + 20);
     
-    this.ctx.font = '12px var(--font-text)';
-    this.ctx.fillText(path, tooltipX + 10, tooltipY + 40);
-    this.ctx.fillText(`Keywords: ${terms}`, tooltipX + 10, tooltipY + 60);
+    // Path in muted color
+    this.ctx.font = 'italic 11px sans-serif';
+    this.ctx.fillStyle = '#666666';
+    this.ctx.fillText(path, tooltipX + 10, tooltipY + 35);
+    
+    // Keywords in normal text color
+    this.ctx.font = '12px sans-serif';
+    this.ctx.fillStyle = '#333333';
+    this.ctx.fillText(`Keywords: ${terms}`, tooltipX + 10, tooltipY + 55);
     
     // Add color mode specific information
-    this.ctx.fillText(colorInfo, tooltipX + 10, tooltipY + 80);
+    this.ctx.fillText(colorInfo, tooltipX + 10, tooltipY + 75);
+    
+    // Add word count and reading time if available
+    if (wordCount || readingTime) {
+      const statsText = [wordCount, readingTime].filter(Boolean).join(' • ');
+      this.ctx.fillStyle = '#555555';
+      this.ctx.fillText(statsText, tooltipX + 10, tooltipY + 95);
+    }
+    
+    // Add content preview if available
+    if (contentPreview) {
+      this.ctx.font = 'italic 11px sans-serif';
+      this.ctx.fillStyle = '#777777';
+      // Trim preview if too long
+      const displayPreview = contentPreview.length > 60 
+        ? contentPreview.substring(0, 60) + '...' 
+        : contentPreview;
+      this.ctx.fillText(`"${displayPreview}"`, tooltipX + 10, tooltipY + 115);
+    }
   }
 }

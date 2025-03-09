@@ -26,20 +26,6 @@
               "icon": "graph",
               "title": "t-SNE Visualization"
             }
-          },
-          {
-            "id": "515b731f8ef8905e",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "note033_haircut_theory.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "note033_haircut_theory"
-            }
           }
         ],
         "currentTab": 1
@@ -189,10 +175,12 @@
   },
   "active": "f12556752555194c",
   "lastOpenFiles": [
+    "note007_plant_communication.md",
+    "note027_music_for_plants.md",
+    "note033_haircut_theory.md",
+    "note030_bookstore_portal.md",
     "note043_hat_theory.md",
     "note028_alternative_milk.md",
-    "note033_haircut_theory.md",
-    "note027_music_for_plants.md",
     "note042_elevator_music.md",
     "note050_parallel_street.md",
     "note049_coffee_sentience.md",
@@ -211,9 +199,7 @@
     "note034_shopping_cart_navigation.md",
     "note032_houseplant_migration.md",
     "note031_fortune_cookie_conspiracy.md",
-    "note030_bookstore_portal.md",
     "note029_pocket_universe.md",
-    "note026_traffic_light_sequence.md",
-    "note025_gravity_testing.md"
+    "note026_traffic_light_sequence.md"
   ]
 }
