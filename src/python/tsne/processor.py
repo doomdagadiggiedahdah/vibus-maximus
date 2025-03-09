@@ -53,8 +53,9 @@ class NoteProcessor:
         from sklearn.cluster import DBSCAN
         
         # Use DBSCAN for clustering (automatically determines number of clusters)
-        # Higher eps (0.8) and min_samples (3) for better cluster formation with larger datasets
-        clustering = DBSCAN(eps=0.8, min_samples=3).fit(X_tsne)
+        # Balanced eps (0.6) and min_samples (2) for better cluster formation with larger datasets
+        # Smaller eps makes more, tighter clusters (0.5-0.6 is a good range)
+        clustering = DBSCAN(eps=0.6, min_samples=2).fit(X_tsne)
         cluster_labels = clustering.labels_
         
         # Count clusters (excluding noise points labeled as -1)
