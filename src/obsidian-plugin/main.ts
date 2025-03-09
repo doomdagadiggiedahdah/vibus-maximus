@@ -210,10 +210,28 @@ export default class VibeBoyPlugin extends Plugin {
       const notes = await Promise.all(
         selectedFiles.map(async (file) => {
           const content = await this.app.vault.read(file);
+          const stat = await this.app.vault.adapter.stat(file.path);
+          const wordCount = content.split(/\s+/).length;
+          const readingTime = Math.ceil(wordCount / 200); // Avg reading speed ~200 words/minute
+          
+          // Extract tags (looking for #tag format)
+          const tagRegex = /#([a-zA-Z0-9_-]+)/g;
+          const tags = [...content.matchAll(tagRegex)].map(match => match[1]);
+          
+          // Get a content preview (first 150 chars)
+          const contentPreview = content.substring(0, 150).replace(/\n/g, ' ') + 
+            (content.length > 150 ? '...' : '');
+          
           return {
             path: file.path,
             title: file.basename,
-            content: content
+            content: content,
+            mtime: stat.mtime,
+            ctime: stat.ctime,
+            wordCount: wordCount,
+            readingTime: readingTime,
+            tags: tags,
+            contentPreview: contentPreview
           };
         })
       );
@@ -265,6 +283,21 @@ export default class VibeBoyPlugin extends Plugin {
       }
       
       this.updateStatus('Visualizing results...');
+      
+      // Debug - log the result structure to check metadata
+      console.log('Visualizing result with metadata:', result);
+      // Check if we have additional metadata
+      if (result.points && result.points.length > 0) {
+        const samplePoint = result.points[0];
+        console.log('Sample point metadata:', {
+          hasWordCount: samplePoint.wordCount !== undefined,
+          hasMtime: samplePoint.mtime !== undefined,
+          hasCtime: samplePoint.ctime !== undefined,
+          hasTags: samplePoint.tags !== undefined,
+          hasContentPreview: samplePoint.contentPreview !== undefined,
+          hasDistanceToCenter: samplePoint.distanceToCenter !== undefined
+        });
+      }
       
       // Visualize the result
       this.visualizeResult(result);
@@ -338,6 +371,15 @@ interface TSNEPoint {
   path: string;
   top_terms: string[];
   cluster: number; // Cluster ID (-1 means noise/not clustered)
+  
+  // Additional metadata
+  mtime?: number;      // Last modified time
+  ctime?: number;      // Creation time
+  wordCount?: number;  // Word count
+  readingTime?: number; // Estimated reading time in minutes  
+  tags?: string[];     // Note tags
+  contentPreview?: string; // Short preview of content
+  distanceToCenter?: number; // Distance to cluster center
 }
 
 // Interface for cluster term information
@@ -759,16 +801,43 @@ class TSNEVisualizer {
     if (!this.hoveredPoint || !this.result) return;
     
     const [x, y] = this.worldToScreen(this.hoveredPoint.x, this.hoveredPoint.y);
+    const point = this.hoveredPoint;
     
     // Tooltip content
-    const title = this.hoveredPoint.title;
-    const path = this.hoveredPoint.path;
-    const terms = this.hoveredPoint.top_terms.join(', ');
+    const title = point.title;
+    const path = point.path;
+    const terms = point.top_terms.join(', ');
+    
+    // Format dates if available
+    const formatDate = (timestamp?: number) => {
+      if (!timestamp) return 'Unknown';
+      const date = new Date(timestamp);
+      return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    };
+    
+    // Get metadata
+    const modified = formatDate(point.mtime);
+    const created = formatDate(point.ctime);
+    const wordCount = point.wordCount ? `${point.wordCount} words` : 'Unknown';
+    const readingTime = point.readingTime ? `~${point.readingTime} min read` : '';
+    
+    // Format tags
+    const tags = point.tags && point.tags.length > 0 
+      ? point.tags.map(tag => `#${tag}`).join(' ')
+      : 'No tags';
+    
+    // Format content preview
+    const preview = point.contentPreview || 'No preview available';
+    
+    // Get distance to center
+    const distanceInfo = point.distanceToCenter !== undefined && point.cluster !== -1
+      ? `Distance to center: ${point.distanceToCenter.toFixed(2)}`
+      : '';
     
     // Get cluster information
     let clusterInfo = 'Not clustered';
-    if (this.hoveredPoint.cluster !== -1) {
-      const clusterId = this.hoveredPoint.cluster;
+    if (point.cluster !== -1) {
+      const clusterId = point.cluster;
       
       // Get cluster terms if available
       let clusterTerms = '';
@@ -782,43 +851,85 @@ class TSNEVisualizer {
       clusterInfo = `Cluster ${clusterId}: ${clusterTerms}`;
     }
     
-    // Prepare text
-    this.ctx.font = 'bold 14px var(--font-text)';
-    const titleWidth = this.ctx.measureText(title).width;
-    
-    this.ctx.font = '12px var(--font-text)';
-    const pathWidth = this.ctx.measureText(path).width;
-    const termsWidth = this.ctx.measureText(`Keywords: ${terms}`).width;
-    const clusterWidth = this.ctx.measureText(`Cluster: ${clusterInfo}`).width;
+    // Define all tooltip sections
+    const sections = [
+      { label: 'Title', text: title, font: 'bold 14px var(--font-text)' },
+      { label: 'Path', text: path },
+      { label: 'Keywords', text: terms },
+      { label: 'Cluster', text: clusterInfo },
+      { label: 'Tags', text: tags },
+      { label: 'Modified', text: modified },
+      { label: 'Created', text: created },
+      { label: 'Stats', text: `${wordCount} ${readingTime}` },
+      { label: 'Preview', text: preview, optional: true },
+      { label: '', text: distanceInfo, skipIfEmpty: true }
+    ];
     
     // Calculate tooltip dimensions
-    const tooltipWidth = Math.max(titleWidth, pathWidth, termsWidth, clusterWidth) + 20;
-    const tooltipHeight = 95; // Increased height for the cluster info
+    this.ctx.font = 'bold 14px var(--font-text)';
+    let tooltipWidth = this.ctx.measureText(title).width;
+    
+    this.ctx.font = '12px var(--font-text)';
+    sections.forEach(section => {
+      if (!section.skipIfEmpty || section.text) {
+        const width = this.ctx.measureText(
+          section.label ? `${section.label}: ${section.text}` : section.text
+        ).width;
+        tooltipWidth = Math.max(tooltipWidth, width);
+      }
+    });
+    
+    tooltipWidth += 20; // Add padding
+    
+    // Calculate tooltip height (more sections now)
+    const lineHeight = 20;
+    // Count how many sections will be visible
+    const visibleSections = sections.filter(s => !s.optional && (!s.skipIfEmpty || s.text)).length;
+    console.log(`Visible sections: ${visibleSections}`);
+    // Add some extra padding to ensure all text fits
+    const tooltipHeight = (visibleSections + 1) * lineHeight + 20;
+    
+    // Position tooltip
     const tooltipX = Math.min(x + 10, this.width - tooltipWidth - 10);
     const tooltipY = Math.min(y - 10, this.height - tooltipHeight - 10);
     
-    // Draw tooltip background
-    this.ctx.fillStyle = 'var(--background-primary)';
-    this.ctx.strokeStyle = 'var(--background-modifier-border)';
+    // Draw tooltip background with solid colors instead of CSS variables
+    this.ctx.fillStyle = 'rgba(255, 255, 255, 0.95)'; // Nearly opaque white background
+    this.ctx.strokeStyle = '#666666'; // Medium gray border
     this.ctx.lineWidth = 1;
     
     this.roundRect(tooltipX, tooltipY, tooltipWidth, tooltipHeight, 5);
     this.ctx.fill();
     this.ctx.stroke();
     
-    // Draw tooltip content
-    this.ctx.fillStyle = 'var(--text-normal)';
+    // Add a debug rectangle to ensure the tooltip area is rendered
+    this.ctx.strokeStyle = '#FF0000'; // Red outline for debugging
+    this.ctx.strokeRect(tooltipX, tooltipY, tooltipWidth, tooltipHeight);
+    
+    // Draw tooltip content - use a solid color instead of CSS variable
+    this.ctx.fillStyle = '#000000'; // Black text should be visible on any background
     this.ctx.textAlign = 'left';
     
-    this.ctx.font = 'bold 14px var(--font-text)';
-    this.ctx.fillText(title, tooltipX + 10, tooltipY + 20);
+    // Debug the tooltip dimensions
+    console.log(`Drawing tooltip: ${tooltipWidth}x${tooltipHeight} at ${tooltipX},${tooltipY}`);
     
-    this.ctx.font = '12px var(--font-text)';
-    this.ctx.fillText(path, tooltipX + 10, tooltipY + 40);
-    this.ctx.fillText(`Keywords: ${terms}`, tooltipX + 10, tooltipY + 60);
-    
-    // Add cluster information
-    this.ctx.fillText(`Cluster: ${clusterInfo}`, tooltipX + 10, tooltipY + 80);
+    // Draw each section
+    let currentY = tooltipY + 20;
+    sections.forEach(section => {
+      if (section.optional || (section.skipIfEmpty && !section.text)) return;
+      
+      this.ctx.font = section.font || '12px sans-serif'; // Use sans-serif instead of CSS variable
+      
+      const text = section.label
+        ? `${section.label}: ${section.text}`
+        : section.text;
+      
+      // Debug each line of text
+      console.log(`Drawing text at ${tooltipX + 10},${currentY}: ${text}`);
+      
+      this.ctx.fillText(text, tooltipX + 10, currentY);
+      currentY += lineHeight;
+    });
   }
 }
 

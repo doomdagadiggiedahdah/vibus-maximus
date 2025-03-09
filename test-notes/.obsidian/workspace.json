@@ -18,7 +18,7 @@
             }
           },
           {
-            "id": "c8d9211d605f9310",
+            "id": "f12556752555194c",
             "type": "leaf",
             "state": {
               "type": "tsne-visualization",
@@ -173,8 +173,10 @@
       "command-palette:Open command palette": false
     }
   },
-  "active": "c8d9211d605f9310",
+  "active": "f12556752555194c",
   "lastOpenFiles": [
+    "DS4_DataVisualization.md",
+    "DS2_EDA.md",
     "DL4_GANs.md",
     "CLOUD2_Azure.md"
   ]

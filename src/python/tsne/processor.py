@@ -66,12 +66,18 @@ class NoteProcessor:
             "clusters": n_clusters
         }
         
-        # Determine top terms for each cluster
+        # Determine top terms for each cluster and calculate cluster centers
         cluster_terms = {}
+        cluster_centers = {}
         for cluster_id in set(cluster_labels):
             if cluster_id != -1:  # Skip noise points
                 # Get all points in this cluster
                 cluster_indices = np.where(cluster_labels == cluster_id)[0]
+                
+                # Calculate cluster center
+                cluster_points = X_tsne[cluster_indices]
+                cluster_center = np.mean(cluster_points, axis=0)
+                cluster_centers[cluster_id] = cluster_center
                 
                 # Aggregate TF-IDF scores for this cluster
                 cluster_vectors = X[cluster_indices].toarray()
@@ -97,15 +103,31 @@ class NoteProcessor:
             # Get cluster ID (or -1 if noise)
             cluster_id = int(cluster_labels[i])
             
-            # Add to results
-            result["points"].append({
+            # Calculate distance to cluster center if part of a cluster
+            distance_to_center = None
+            if cluster_id != -1:
+                center = cluster_centers[cluster_id]
+                point = X_tsne[i]
+                distance_to_center = float(np.sqrt(np.sum((point - center) ** 2)))
+            
+            # Prepare note data with all additional metadata
+            note_data = {
                 "x": float(X_tsne[i, 0]),
                 "y": float(X_tsne[i, 1]),
                 "title": note['title'],
                 "path": note['path'],
                 "top_terms": top_terms,
-                "cluster": cluster_id
-            })
+                "cluster": cluster_id,
+                "distanceToCenter": distance_to_center
+            }
+            
+            # Add optional metadata if present in the note
+            for field in ['mtime', 'ctime', 'wordCount', 'readingTime', 'tags', 'contentPreview']:
+                if field in note:
+                    note_data[field] = note[field]
+            
+            # Add to results
+            result["points"].append(note_data)
         
         # Add cluster information to results
         result["cluster_terms"] = cluster_terms
