@@ -1,0 +1,3 @@
+# Breakfast Experiment #27: Cereal Soup
+
+Attempted to create a savory breakfast cereal today using beef broth instead of milk with honey-nut loops. The initial aroma was concerning, but the flavor profile developed unexpected complexity around the four-minute soaking mark. Added chopped scallions and a dash of hot sauce at the seven-minute mark, which was a critical error. The cereal began to dissolve into a substance with the exact consistency of papier-mâché. On the plus side, I believe I've accidentally discovered an environmentally friendly adhesive – successfully repaired my broken mug handle with the mixture.

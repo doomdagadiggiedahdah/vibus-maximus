@@ -1,0 +1,3 @@
+# Public Whistling Response Study
+
+Week three of my public whistling experiment continues to yield fascinating results. When I whistle Bach's Cello Suite No. 1 in public spaces, approximately 7% of passersby adjust their walking rhythm to match the tempo. Whistling the theme from "The X-Files" near government buildings causes a 23% increase in nervous glances. Most remarkable finding: the old man who sells newspapers on 5th Avenue responds to my rendition of "Yellow Submarine" by subtly whistling back what sounds like Morse code. Have begun transcribing his responses – so far they spell out what appears to be a cake recipe.

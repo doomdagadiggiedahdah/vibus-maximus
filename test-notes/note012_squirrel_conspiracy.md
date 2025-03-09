@@ -1,0 +1,3 @@
+# The Great Squirrel Conspiracy
+
+The squirrels in the park have established a surveillance network – I'm now certain of it. They've positioned themselves at precisely calculated intervals around my usual bench, maintaining consistent 30-degree visual angles. Today I watched one clearly using a acorn as a disguised recording device. Another was making the same three movements repeatedly: scratch, tail-flick, left paw raise – classic field agent signaling patterns. I've started bringing different snacks to see if it affects their behavior; they responded most aggressively to salted peanuts, which I interpret as a sign I've stumbled upon their code.

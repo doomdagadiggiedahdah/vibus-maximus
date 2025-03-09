@@ -1,0 +1,3 @@
+# Mirror Twin Theory: Update
+
+The reflection version of me in the bathroom mirror definitely blinked a millisecond after I did this morning. This confirms my growing suspicion that the mirror world operates on a slight time delay of approximately 0.3 seconds. Conducted the toothbrush test again where I rapidly move the brush up and down; the reflection's movements were exactly 7 brush strokes behind mine. Have started leaving notes against the mirror at night, but so far Mirror Me hasn't written back – though I did notice my reflected notepad had different doodles in the margins.

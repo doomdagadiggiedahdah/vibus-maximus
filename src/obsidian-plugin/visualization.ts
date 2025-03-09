@@ -356,10 +356,27 @@ export class TSNEVisualizer {
           .join(', ');
         
         // Draw a label with cluster ID and top terms
-        this.ctx.fillStyle = 'var(--text-normal)';
-        this.ctx.font = 'bold 12px var(--font-text)';
+        const labelText = `Cluster ${clusterId}: ${terms}`;
+        this.ctx.font = 'bold 14px var(--font-text)'; // Slightly larger font
+        
+        // Measure text to create background
+        const textMetrics = this.ctx.measureText(labelText);
+        const textWidth = textMetrics.width;
+        const textHeight = 18; // Approximation for height
+        
+        // Draw background for label
+        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.7)'; // Semi-transparent black background
+        this.ctx.fillRect(
+          centerX - textWidth / 2 - 5, 
+          minY - textHeight - 5, 
+          textWidth + 10, 
+          textHeight
+        );
+        
+        // Draw text
+        this.ctx.fillStyle = '#ffffff'; // Bright white for better visibility
         this.ctx.textAlign = 'center';
-        this.ctx.fillText(`Cluster ${clusterId}: ${terms}`, centerX, minY - 5);
+        this.ctx.fillText(labelText, centerX, minY - 5);
       }
     });
   }

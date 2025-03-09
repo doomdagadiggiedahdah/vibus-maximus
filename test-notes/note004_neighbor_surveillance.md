@@ -1,0 +1,3 @@
+# Neighbor Surveillance Log: Day 83
+
+Mr. Peterson from 7B has now retrieved exactly 17 unmarked packages in the last month, always at precisely 3:17 PM. Today he was wearing mismatched socks again – one blue, one with tiny giraffes – which I've determined is his signal for "package contains electronic components." His blinds were open exactly 4.7 inches, the standard width for Tuesdays. Still no concrete evidence he's building a time machine, but the humming from his apartment reached 52.7 Hz last night, just shy of the theoretical resonance frequency needed for temporal displacement.

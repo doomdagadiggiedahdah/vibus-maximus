@@ -6,12 +6,12 @@ import os
 from typing import List, Dict, Any
 
 class NoteProcessor:
-    def __init__(self, perplexity: int = 30, iterations: int = 1000, learning_rate: float = 200.0):
+    def __init__(self, perplexity: int = 40, iterations: int = 2000, learning_rate: float = 150.0):
         self.perplexity = perplexity
         self.iterations = iterations
         self.learning_rate = learning_rate
         self.vectorizer = TfidfVectorizer(
-            max_features=100,  # Limit features to prevent dimensionality issues
+            max_features=150,  # Increased features for better differentiation with more notes
             stop_words='english',
             ngram_range=(1, 2)  # Use both unigrams and bigrams
         )
@@ -53,7 +53,8 @@ class NoteProcessor:
         from sklearn.cluster import DBSCAN
         
         # Use DBSCAN for clustering (automatically determines number of clusters)
-        clustering = DBSCAN(eps=0.5, min_samples=2).fit(X_tsne)
+        # Higher eps (0.8) and min_samples (3) for better cluster formation with larger datasets
+        clustering = DBSCAN(eps=0.8, min_samples=3).fit(X_tsne)
         cluster_labels = clustering.labels_
         
         # Count clusters (excluding noise points labeled as -1)

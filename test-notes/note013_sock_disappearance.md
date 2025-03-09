@@ -1,0 +1,3 @@
+# The Sock Dimension Theory: Evidence File
+
+Lost my seventeenth sock this year, always the left one from a different pair. Have mapped the disappearances and discovered they form a perfect fibonacci spiral when plotted on my apartment floorplan. The epicenter appears to be the 3.7cm gap between the dryer and the wall, which I now believe contains a portal to what I'm calling "The Sock Dimension." Attempted to insert a camera on a string into the gap but the string came back neatly tied into a bow with a note that read "mind your own business" in what appears to be lint-based ink.

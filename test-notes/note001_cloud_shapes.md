@@ -1,0 +1,3 @@
+# Cloud Shapes and Their Secrets
+
+Spotted a cloud formation today that looked exactly like my childhood hamster, Mr. Nibbles. It stayed in that shape for precisely 7 minutes before morphing into what I can only describe as a perfect rendition of the Pythagorean theorem. I've been cataloging these cloud-to-mathematical-concept transitions for three weeks now and I'm convinced there's a pattern. The universe might be trying to communicate advanced calculus through cumulus.

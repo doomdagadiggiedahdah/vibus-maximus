@@ -1,0 +1,3 @@
+# Plant Communication Research: Week 8
+
+The ficus has finally responded to my daily theremin performances. This morning it dropped exactly three leaves in what I've interpreted as Morse code for either "water me" or "stop the noise." My hypothesis that plants prefer avant-garde jazz over classical music seems supported by the dramatic growth of the spider plant after I played twelve hours of Sun Ra. The cactus, however, continues its stubborn silence despite my nightly readings from the phone book – perhaps it prefers fiction?

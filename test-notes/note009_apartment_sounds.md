@@ -1,0 +1,3 @@
+# Apartment Sound Catalog
+
+The pipe behind the bathroom wall made the "glug-whistle-ping" sequence again at exactly 3:17 AM. This is the seventh consecutive night, which disproves my initial theory about it being related to the neighbor's toilet habits. Have created a musical notation system to transcribe these pipe symphonies – last night's performance lasted 14 minutes and included what I swear was the chorus from "Bohemian Rhapsody." The refrigerator has started humming in perfect harmony, leading me to suspect some kind of appliance conspiracy.

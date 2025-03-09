@@ -1,0 +1,3 @@
+# The Phantom Phone Phenomenon
+
+My phone continues to receive texts from a number that supposedly doesn't exist according to all three major carriers I've contacted. Messages arrive precisely at 3:33 AM every third day and contain what appear to be coordinates followed by cryptic phrases like "the ducks are not what they seem" and "midnight blossoms only under copper light." I've plotted the coordinates on a map and they form a perfect outline of my childhood home's floor plan, despite being scattered across four continents. Most unsettling development: last night's message was a perfectly detailed description of the dream I was having at that exact moment.

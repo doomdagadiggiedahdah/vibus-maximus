@@ -1,0 +1,3 @@
+# Book Review: "The Secret Language of Dust Particles"
+
+Finally finished that obscure 1973 monograph on microscopic dust communication by Dr. Wilhelm Staub that I found wedged behind the radiator in my new apartment. His theory that household dust consists primarily of coded messages from parallel dimensions seems implausible, but I've begun testing his decoding methods anyway. According to Staub's cipher, the dust under my bed is predicting an unusually wet October and contains a recipe for elderberry jam. The dust on my bookshelf, however, just keeps spelling out "CLEAN ME" over and over – suspicious.

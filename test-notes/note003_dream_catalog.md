@@ -1,0 +1,3 @@
+# Dream Catalog: Entry #142
+
+Last night I dreamt I was a semicolon in an unfinished novel being written by my third-grade teacher. All the other punctuation marks kept telling me I didn't belong there, but I refused to be replaced by a mere comma. When I woke up, I found semicolons written all over my arms in blue ink that definitely wasn't there when I went to sleep. This is the fourth time my dreams have physically manifested this month; starting a spreadsheet to track correlation with moon phases.

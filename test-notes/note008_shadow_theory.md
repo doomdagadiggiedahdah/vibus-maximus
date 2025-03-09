@@ -1,0 +1,3 @@
+# Shadow Independence Theory: Evidence Log
+
+I'm becoming increasingly convinced that my shadow has developed sentience and occasionally moves independently of me. Yesterday at 3:42 PM, it clearly waved at a passing dog while I remained perfectly still. This morning it seemed to deliberately avoid a puddle I stepped in, keeping itself completely dry while my left sock got soaked. Have set up a camera to record my shadow when I'm sleeping – the night footage has been inconclusive so far, though I can't explain why the lens was covered with fingerprints that don't match mine.

@@ -1,0 +1,3 @@
+# Subway Passenger Patterns: Field Notes
+
+I've been documenting the seating arrangements on my morning commute for 73 consecutive days, and the patterns are undeniable. There's a clear preference for diagonal seating relationships when the train is below 27% capacity. When a passenger wearing red enters, there's a 94% chance the next person to board will touch their left ear within 30 seconds. The man with the green backpack has appeared precisely every third Tuesday, always stands holding the same pole, and never exits the train – at least not while I'm watching. Beginning to suspect the entire transit system is an elaborate sociological experiment.

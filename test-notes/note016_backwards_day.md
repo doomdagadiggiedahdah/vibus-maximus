@@ -1,0 +1,3 @@
+# Backwards Day Experiment: Results
+
+Lived my entire day in reverse order today as part of my ongoing temporal perception experiments. Started with dinner at 6 AM, wore pajamas to work, and greeted everyone with "goodbye." The barista at my usual coffee shop didn't bat an eye when I ordered an "uncoffee" and walked out backwards – I suspect she might be a fellow experimenter. Most interesting observation: walking backwards all day resulted in encountering 37% more dogs than usual, and they all seemed unusually interested in me. Time genuinely felt slower, though my watch insisted on moving forward despite my protests.

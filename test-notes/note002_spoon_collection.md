@@ -1,0 +1,3 @@
+# Spoon Collection Update #37
+
+Added a rare Danish butter spoon (circa 1887) to my collection today, bringing the total to 247 unique pieces. Its handle shows signs of what I believe to be ritualistic scratches, possibly from a mid-winter solstice ceremony. The seller claimed it belonged to a sailor who survived three shipwrecks, which would explain the faint maritime energy I feel when holding it. Will place it between the haunted soup ladle and the spoon I found inside that hollow tree.

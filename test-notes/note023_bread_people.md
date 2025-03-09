@@ -1,0 +1,3 @@
+# The Bread People Theory: Evidence Log
+
+My ongoing research into what I call "Bread People" – individuals who may actually be sentient bread products in human disguise – yielded three new potential subjects today. The woman at the bus stop had distinctly toast-like skin texture and smelled faintly of sourdough. The mailman avoided puddles with unusual determination (bread's natural enemy: water). Most compelling case: my new coworker Dave has never once been seen eating bread products and makes a soft crinkling noise when he sits down quickly. I've begun testing suspected Bread People by casually dropping crumbs near them and observing their reaction – genuine humans show indifference, while Bread People exhibit subtle signs of distress or solidarity.

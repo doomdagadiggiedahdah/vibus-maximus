@@ -1,0 +1,3 @@
+# Documented Time Slips: Incident #8
+
+Experienced another micro time-jump today between 2:47 PM and 2:53 PM where I have no memory of what happened. Found myself in the kitchen holding a perfectly arranged stack of alphabetized spices that I definitely don't remember organizing. This is the third incident this month occurring precisely at 6-minute intervals. Previous time slip resulted in all my books being arranged by color, and the one before that left me with a detailed drawing of what appears to be a blueprint for a perpetual motion machine. Have started wearing a body camera but it mysteriously turns off during these episodes.

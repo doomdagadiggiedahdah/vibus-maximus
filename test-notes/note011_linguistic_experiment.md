@@ -1,0 +1,3 @@
+# Linguistic Experiment: Day 16
+
+My attempt to speak exclusively in palindromes today yielded mixed results. "Wow" and "madam" were easy enough, but ordering coffee became a 12-minute ordeal that ended with the barista giving me a concerned look and a free muffin. The cat seems to have caught on and now only responds to "tac." Most concerning development: found myself sleep-talking in perfect palindromes last night according to my recording app – "Evil olive" repeated for 7 minutes straight.

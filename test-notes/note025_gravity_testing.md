@@ -1,0 +1,3 @@
+# Localized Gravity Fluctuation Testing
+
+I've identified a 3.7-foot diameter circle in my kitchen where gravity appears to be approximately 0.83% weaker than surrounding areas. Objects dropped in this zone fall with a subtly altered trajectory, and water in my mug develops a barely perceptible tilt when placed in the anomaly. The effect strengthens between 2-4 AM and during electrical storms. I've tested 237 different objects in the zone – most interesting result: paperclips dropped in the exact center arrange themselves in a perfect north-south alignment upon landing. My application to borrow scientific measuring equipment from the university physics department was denied after I explained the purpose, suggesting a potential cover-up of domestic gravity anomalies.
