@@ -1,0 +1,10 @@
+{
+  "id": "vibe-boi",
+  "name": "Vibe Boi - t-SNE Visualization",
+  "version": "0.1.0",
+  "minAppVersion": "0.15.0",
+  "description": "Create t-SNE visualizations of your notes for cluster analysis",
+  "author": "You",
+  "authorUrl": "",
+  "isDesktopOnly": true
+}

@@ -1,0 +1,32 @@
+{
+  "name": "vibe-boi",
+  "version": "0.1.0",
+  "description": "t-SNE visualization for Obsidian notes",
+  "main": "src/obsidian-plugin/main.js",
+  "scripts": {
+    "dev": "rollup --config rollup.config.js -w",
+    "build": "rollup --config rollup.config.js"
+  },
+  "keywords": [
+    "obsidian",
+    "plugin",
+    "t-sne",
+    "visualization",
+    "clustering"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "tsne-js": "^1.0.3"
+  },
+  "devDependencies": {
+    "@rollup/plugin-commonjs": "^21.1.0",
+    "@rollup/plugin-node-resolve": "^13.3.0",
+    "@rollup/plugin-typescript": "^8.5.0",
+    "@types/node": "^17.0.5",
+    "obsidian": "^0.15.0",
+    "rollup": "^2.79.2",
+    "tslib": "^2.8.1",
+    "typescript": "^4.5.4"
+  }
+}
