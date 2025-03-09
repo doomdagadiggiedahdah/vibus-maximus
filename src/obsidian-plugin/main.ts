@@ -342,6 +342,10 @@ class SuggestedLinksModal extends Modal {
       return;
     }
     
+    // Close the modal first so it doesn't interfere with the note opening
+    this.close();
+    
+    // Create the link - this will also open the source note
     const success = await this.plugin.createNoteLink(
       connection.sourceNote.path,
       connection.targetNote.path,
@@ -349,29 +353,99 @@ class SuggestedLinksModal extends Modal {
     );
     
     if (success) {
-      new Notice(`Successfully linked ${connection.sourceNote.title} to ${connection.targetNote.title}`);
-      
-      // Remove this connection from the list
-      this.connections = this.connections.filter((_, index) => index !== this.selectedConnectionIndex);
-      
-      if (this.connections.length === 0) {
-        // No more connections, close the modal
-        this.close();
-        return;
-      }
-      
-      // Select the next connection
-      this.selectedConnectionIndex = Math.min(this.selectedConnectionIndex, this.connections.length - 1);
-      
-      // Update the UI
-      const connectionContainer = this.contentEl.querySelector('.connections-container') as HTMLElement;
-      const detailsContainer = this.contentEl.querySelector('.connection-details') as HTMLElement;
-      
-      this.renderConnectionsList(connectionContainer);
-      this.renderConnectionDetails(
-        detailsContainer, 
-        this.connections[this.selectedConnectionIndex]
-      );
+      // Open the target note in a split pane after a short delay to let the source note open
+      setTimeout(() => {
+        try {
+          // Also offer option to view the target note
+          const targetFile = this.app.vault.getAbstractFileByPath(connection.targetNote.path);
+          if (targetFile instanceof TFile) {
+            // Create a modal asking if user wants to open the target note
+            const modal = new Modal(this.app);
+            const { contentEl } = modal;
+            
+            // Add some styling
+            const style = document.createElement('style');
+            style.textContent = `
+              .success-modal {
+                padding: 20px;
+                text-align: center;
+              }
+              .success-icon {
+                font-size: 36px;
+                margin-bottom: 15px;
+                color: var(--interactive-accent);
+              }
+              .success-title {
+                margin-bottom: 10px;
+                color: var(--interactive-accent);
+              }
+              .note-info {
+                margin-bottom: 20px;
+                font-style: italic;
+              }
+              .confirmation-question {
+                margin-bottom: 20px;
+                font-weight: bold;
+              }
+              .modal-button-container {
+                display: flex;
+                justify-content: space-around;
+                margin-top: 20px;
+              }
+            `;
+            document.head.appendChild(style);
+            
+            // Create the modal content with styling
+            const container = contentEl.createDiv({ cls: 'success-modal' });
+            
+            // Success icon - using emoji for simplicity
+            container.createDiv({ cls: 'success-icon', text: '🔗' });
+            
+            container.createEl('h2', { 
+              text: `Link Created Successfully!`,
+              cls: 'success-title'
+            });
+            
+            container.createEl('p', { 
+              text: `A link to "${connection.targetNote.title}" has been added to "${connection.sourceNote.title}".`,
+              cls: 'note-info'
+            });
+            
+            container.createEl('p', { 
+              text: `Would you like to open "${connection.targetNote.title}" as well?`,
+              cls: 'confirmation-question'
+            });
+            
+            const buttonContainer = container.createDiv({ cls: 'modal-button-container' });
+            
+            // Button to open the target note
+            const openButton = new ButtonComponent(buttonContainer)
+              .setButtonText(`Open "${connection.targetNote.title}"`)
+              .setCta()
+              .onClick(() => {
+                // Open in a new leaf (split pane)
+                const leaf = this.app.workspace.createLeafBySplit(
+                  this.app.workspace.activeLeaf, 
+                  'vertical'
+                );
+                
+                leaf.openFile(targetFile);
+                modal.close();
+              });
+            
+            // Button to stay on the current note
+            new ButtonComponent(buttonContainer)
+              .setButtonText('Stay on current note')
+              .onClick(() => {
+                modal.close();
+              });
+            
+            modal.open();
+          }
+        } catch (error) {
+          console.error('Error opening target note:', error);
+        }
+      }, 500);
     }
   }
   
@@ -915,6 +989,23 @@ export default class VibeBoyPlugin extends Plugin {
       
       // Append the link to the source file
       await this.app.vault.modify(sourceFile, sourceContent + linkText);
+      
+      // Open the source file in a new pane to show the link
+      const leaf = this.app.workspace.getLeaf(
+        this.app.workspace.activeLeaf !== null && 
+        this.app.workspace.activeLeaf !== undefined
+      );
+      
+      await leaf.openFile(sourceFile, { 
+        active: true,   // Make the pane active
+        eState: {       // Try to scroll to the newly added link
+          line: sourceContent.split('\n').length + 2, // Approximate line number of the new link
+          focus: true   // Focus the editor
+        }
+      });
+      
+      // Show a success notice
+      new Notice("Link created successfully! 🔗", 2000);
       
       return true;
     } catch (error) {
