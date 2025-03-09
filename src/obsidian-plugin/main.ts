@@ -572,15 +572,19 @@ class TSNEView extends ItemView {
       }
       .tsne-container {
         width: 100%;
-        height: 600px;
+        height: 800px;
         margin: 1rem 0;
         border-radius: 4px;
+        overflow-x: auto;
+        overflow-y: auto;
       }
       .tsne-status {
-        margin-top: 1rem;
+        margin-top: 820px; /* Position below the visualization */
         padding: 0.5rem;
         border-radius: 4px;
         background-color: var(--background-secondary);
+        position: absolute;
+        width: calc(100% - 2rem);
       }
       .tsne-status-text {
         margin: 0;

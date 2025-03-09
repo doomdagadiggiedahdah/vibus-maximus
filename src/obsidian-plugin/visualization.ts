@@ -34,8 +34,8 @@ export class TSNEVisualizer {
   private canvas: HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D;
   private result: TSNEResult | null = null;
-  private width = 800;
-  private height = 600;
+  private width = 1600;  // Increased from 800 to 1600
+  private height = 700;  // Increased from 600 to 700
   private pointRadius = 10;
   private mouseX = 0;
   private mouseY = 0;
@@ -58,6 +58,11 @@ export class TSNEVisualizer {
     this.canvas.height = this.height;
     this.canvas.classList.add('tsne-canvas');
     this.canvas.style.border = '1px solid var(--background-modifier-border)';
+    
+    // Center the canvas in the container
+    this.canvas.style.display = 'block';
+    this.canvas.style.marginLeft = 'auto';
+    this.canvas.style.marginRight = 'auto';
     
     const context = this.canvas.getContext('2d');
     if (!context) {
