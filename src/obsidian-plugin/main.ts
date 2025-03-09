@@ -154,10 +154,13 @@ class SuggestedLinksModal extends Modal {
     // Generate description button
     const generateButton = new ButtonComponent(container)
       .setButtonText('Generate Connection Description')
-      .setClass('generate-button mod-cta')
+      .setCta() // Use setCta() instead of setClass with spaces
       .onClick(async () => {
         await this.generateLLMDescription(connection);
       });
+    
+    // Add class without spaces
+    generateButton.buttonEl.addClass('generate-button');
     
     if (this.processingConnection) {
       generateButton.setDisabled(true);
@@ -180,7 +183,7 @@ class SuggestedLinksModal extends Modal {
       
       new ButtonComponent(buttonContainer)
         .setButtonText('Create Link')
-        .setClass('mod-cta')
+        .setCta() // Use setCta() instead of setClass with spaces
         .onClick(async () => {
           this.createLink(connection, textArea.getValue());
         });
