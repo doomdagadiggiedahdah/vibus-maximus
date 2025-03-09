@@ -851,83 +851,177 @@ class TSNEVisualizer {
       clusterInfo = `Cluster ${clusterId}: ${clusterTerms}`;
     }
     
-    // Define all tooltip sections
+    // Define all tooltip sections - more compact layout with grouping
     const sections = [
-      { label: 'Title', text: title, font: 'bold 14px var(--font-text)' },
-      { label: 'Path', text: path },
-      { label: 'Keywords', text: terms },
-      { label: 'Cluster', text: clusterInfo },
-      { label: 'Tags', text: tags },
-      { label: 'Modified', text: modified },
-      { label: 'Created', text: created },
-      { label: 'Stats', text: `${wordCount} ${readingTime}` },
-      { label: 'Preview', text: preview, optional: true },
-      { label: '', text: distanceInfo, skipIfEmpty: true }
+      { 
+        label: 'Title', 
+        text: title, 
+        font: 'bold 14px sans-serif',
+        alwaysShow: true  // Always show title
+      },
+      {
+        label: 'Path', 
+        text: path, 
+        font: 'italic 11px sans-serif',
+        skipIfEmpty: true
+      },
+      { 
+        label: 'Keywords', 
+        text: terms, 
+        skipIfEmpty: true
+      },
+      { 
+        label: 'Cluster', 
+        text: clusterInfo, 
+        skipIfEmpty: true
+      },
+      // Combine tags and stats into one line if both exist
+      { 
+        label: 'Info', 
+        text: [
+          tags !== 'No tags' ? tags : null,
+          wordCount && readingTime ? `${wordCount} (${readingTime})` : wordCount || ''
+        ].filter(Boolean).join(' • '),
+        skipIfEmpty: true
+      },
+      // Combine dates into one line to save space
+      { 
+        label: 'Dates', 
+        text: `Modified: ${modified}${point.ctime ? ` • Created: ${created}` : ''}`,
+        font: '11px sans-serif',
+        skipIfEmpty: point.mtime === undefined
+      },
+      // Content preview is shown in a distinct style
+      { 
+        label: 'Preview', 
+        text: preview, 
+        font: 'italic 11px sans-serif',
+        skipIfEmpty: !point.contentPreview || point.contentPreview.length < 5
+      },
+      // Show distance info only if it exists
+      { 
+        label: '', 
+        text: distanceInfo, 
+        font: '10px sans-serif',
+        skipIfEmpty: true 
+      }
     ];
     
-    // Calculate tooltip dimensions
-    this.ctx.font = 'bold 14px var(--font-text)';
-    let tooltipWidth = this.ctx.measureText(title).width;
+    // Set proper font for measurements
+    this.ctx.font = 'bold 14px sans-serif';
+    let tooltipWidth = this.ctx.measureText(title).width + 20; // Add some padding
     
-    this.ctx.font = '12px var(--font-text)';
+    // Calculate maximum width needed
     sections.forEach(section => {
-      if (!section.skipIfEmpty || section.text) {
+      if (section.alwaysShow || (!section.skipIfEmpty || section.text)) {
+        this.ctx.font = section.font || '12px sans-serif';
         const width = this.ctx.measureText(
           section.label ? `${section.label}: ${section.text}` : section.text
-        ).width;
+        ).width + 20; // Add padding
         tooltipWidth = Math.max(tooltipWidth, width);
       }
     });
     
-    tooltipWidth += 20; // Add padding
+    // Limit tooltip width to a reasonable maximum (80% of canvas width)
+    tooltipWidth = Math.min(tooltipWidth, this.width * 0.8);
     
-    // Calculate tooltip height (more sections now)
-    const lineHeight = 20;
+    // Calculate tooltip height with more compact line spacing
+    const lineHeight = 18; // Slightly smaller line height
     // Count how many sections will be visible
-    const visibleSections = sections.filter(s => !s.optional && (!s.skipIfEmpty || s.text)).length;
-    console.log(`Visible sections: ${visibleSections}`);
-    // Add some extra padding to ensure all text fits
-    const tooltipHeight = (visibleSections + 1) * lineHeight + 20;
+    const visibleSections = sections.filter(s => 
+      s.alwaysShow || (!s.skipIfEmpty || s.text)
+    ).length;
     
-    // Position tooltip
-    const tooltipX = Math.min(x + 10, this.width - tooltipWidth - 10);
-    const tooltipY = Math.min(y - 10, this.height - tooltipHeight - 10);
+    // More compact tooltip height
+    const tooltipHeight = visibleSections * lineHeight + 12; // Less padding
     
-    // Draw tooltip background with solid colors instead of CSS variables
-    this.ctx.fillStyle = 'rgba(255, 255, 255, 0.95)'; // Nearly opaque white background
-    this.ctx.strokeStyle = '#666666'; // Medium gray border
+    // Position tooltip - ensure it stays fully visible within the canvas
+    // If tooltip is too wide, position it to the left of the point instead of the right
+    let tooltipX = x + 10;
+    if (tooltipX + tooltipWidth > this.width - 10) {
+      tooltipX = x - tooltipWidth - 10;
+    }
+    
+    // If tooltip is still out of bounds (rare case with very wide tooltips), center it
+    if (tooltipX < 10) {
+      tooltipX = Math.max(10, Math.min(this.width - tooltipWidth - 10, x - tooltipWidth/2));
+    }
+    
+    // Position vertically - try to place above the point if it would go off bottom
+    let tooltipY = y + 10;
+    if (tooltipY + tooltipHeight > this.height - 10) {
+      tooltipY = y - tooltipHeight - 10;
+    }
+    
+    // If tooltip is still out of bounds, position it to minimize overflow
+    if (tooltipY < 10) {
+      tooltipY = 10;
+    }
+    
+    // Final check to ensure tooltip is as visible as possible
+    tooltipX = Math.max(10, Math.min(tooltipX, this.width - tooltipWidth - 10));
+    tooltipY = Math.max(10, Math.min(tooltipY, this.height - tooltipHeight - 10));
+    
+    // Draw tooltip background - use a nicer gradient
+    const gradient = this.ctx.createLinearGradient(tooltipX, tooltipY, tooltipX, tooltipY + tooltipHeight);
+    gradient.addColorStop(0, 'rgba(255, 255, 255, 0.95)');
+    gradient.addColorStop(1, 'rgba(245, 245, 250, 0.95)');
+    this.ctx.fillStyle = gradient;
+    this.ctx.strokeStyle = 'rgba(150, 150, 160, 0.8)';
     this.ctx.lineWidth = 1;
     
     this.roundRect(tooltipX, tooltipY, tooltipWidth, tooltipHeight, 5);
     this.ctx.fill();
     this.ctx.stroke();
     
-    // Add a debug rectangle to ensure the tooltip area is rendered
-    this.ctx.strokeStyle = '#FF0000'; // Red outline for debugging
-    this.ctx.strokeRect(tooltipX, tooltipY, tooltipWidth, tooltipHeight);
-    
-    // Draw tooltip content - use a solid color instead of CSS variable
-    this.ctx.fillStyle = '#000000'; // Black text should be visible on any background
+    // Draw tooltip content
     this.ctx.textAlign = 'left';
     
-    // Debug the tooltip dimensions
-    console.log(`Drawing tooltip: ${tooltipWidth}x${tooltipHeight} at ${tooltipX},${tooltipY}`);
-    
     // Draw each section
-    let currentY = tooltipY + 20;
+    let currentY = tooltipY + 14;
     sections.forEach(section => {
-      if (section.optional || (section.skipIfEmpty && !section.text)) return;
+      if (!section.alwaysShow && (section.skipIfEmpty && !section.text)) return;
       
-      this.ctx.font = section.font || '12px sans-serif'; // Use sans-serif instead of CSS variable
+      this.ctx.font = section.font || '12px sans-serif';
       
-      const text = section.label
+      // Use different text colors for different sections
+      if (section.label === 'Title') {
+        this.ctx.fillStyle = '#333333'; // Dark gray for title
+      } else if (section.label === 'Preview') {
+        this.ctx.fillStyle = '#666666'; // Medium gray for preview
+      } else if (section.label === '') {
+        this.ctx.fillStyle = '#999999'; // Light gray for notes
+      } else {
+        this.ctx.fillStyle = '#444444'; // Normal text color
+      }
+      
+      const text = section.label && section.label !== 'Title'
         ? `${section.label}: ${section.text}`
         : section.text;
       
-      // Debug each line of text
-      console.log(`Drawing text at ${tooltipX + 10},${currentY}: ${text}`);
+      // For longer text, handle wrapping
+      if (this.ctx.measureText(text).width > tooltipWidth - 20) {
+        const words = text.split(' ');
+        let line = '';
+        
+        for (let i = 0; i < words.length; i++) {
+          const testLine = line + words[i] + ' ';
+          const metrics = this.ctx.measureText(testLine);
+          
+          if (metrics.width > tooltipWidth - 20 && i > 0) {
+            this.ctx.fillText(line, tooltipX + 10, currentY);
+            line = words[i] + ' ';
+            currentY += lineHeight * 0.8; // Smaller spacing for wrapped text
+          } else {
+            line = testLine;
+          }
+        }
+        
+        this.ctx.fillText(line, tooltipX + 10, currentY);
+      } else {
+        this.ctx.fillText(text, tooltipX + 10, currentY);
+      }
       
-      this.ctx.fillText(text, tooltipX + 10, currentY);
       currentY += lineHeight;
     });
   }
