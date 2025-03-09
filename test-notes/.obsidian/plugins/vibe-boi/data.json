@@ -1,1 +1,6 @@
-{"id":"vibe-boi"}
+{
+  "perplexity": 30,
+  "iterations": 1000,
+  "epsilon": 69,
+  "id": "vibe-boi"
+}
