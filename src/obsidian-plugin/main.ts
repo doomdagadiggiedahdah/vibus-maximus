@@ -1,5 +1,6 @@
 import { App, ItemView, Modal, Notice, Plugin, PluginSettingTab, Setting, TFile, WorkspaceLeaf, TextAreaComponent, ButtonComponent } from 'obsidian';
 import * as TSNE from 'tsne-js';
+import { TSNEVisualizer } from './visualization';
 
 // Interface for note connections
 interface NoteConnection {
@@ -509,17 +510,91 @@ class TSNEView extends ItemView {
       // Add action buttons
       const actionBar = header.createEl("div", { cls: "tsne-actions" });
       
+      // Create parameter control panel
+      const paramPanel = header.createEl("div", { cls: "tsne-param-panel" });
+      paramPanel.style.marginBottom = "15px";
+      paramPanel.style.display = "flex";
+      paramPanel.style.flexWrap = "wrap";
+      paramPanel.style.gap = "15px";
+      paramPanel.style.alignItems = "center";
+      
+      // Add perplexity slider
+      const plugin = (this.app as any).plugins.plugins["vibe-boi"] as VibeBoyPlugin;
+      
+      // Perplexity control
+      const perplexityContainer = paramPanel.createEl("div", { cls: "tsne-param-container" });
+      perplexityContainer.style.display = "flex";
+      perplexityContainer.style.alignItems = "center";
+      perplexityContainer.style.gap = "10px";
+      
+      const perplexityLabel = perplexityContainer.createEl("label", { text: "Perplexity:" });
+      perplexityLabel.style.minWidth = "80px";
+      
+      const perplexityValue = perplexityContainer.createEl("span", { 
+        text: plugin.settings.perplexity.toString(),
+        cls: "tsne-param-value"
+      });
+      perplexityValue.style.minWidth = "30px";
+      perplexityValue.style.textAlign = "center";
+      
+      const perplexitySlider = perplexityContainer.createEl("input", { 
+        type: "range",
+        cls: "tsne-param-slider"
+      });
+      perplexitySlider.setAttribute("min", "5");
+      perplexitySlider.setAttribute("max", "100");
+      perplexitySlider.setAttribute("step", "5");
+      perplexitySlider.setAttribute("value", plugin.settings.perplexity.toString());
+      
+      perplexitySlider.addEventListener("input", async (e) => {
+        const value = parseInt((e.target as HTMLInputElement).value);
+        perplexityValue.textContent = value.toString();
+        plugin.settings.perplexity = value;
+        await plugin.saveSettings();
+      });
+      
+      // Iterations control
+      const iterationsContainer = paramPanel.createEl("div", { cls: "tsne-param-container" });
+      iterationsContainer.style.display = "flex";
+      iterationsContainer.style.alignItems = "center";
+      iterationsContainer.style.gap = "10px";
+      
+      const iterationsLabel = iterationsContainer.createEl("label", { text: "Iterations:" });
+      iterationsLabel.style.minWidth = "80px";
+      
+      const iterationsValue = iterationsContainer.createEl("span", { 
+        text: plugin.settings.iterations.toString(),
+        cls: "tsne-param-value"
+      });
+      iterationsValue.style.minWidth = "30px";
+      iterationsValue.style.textAlign = "center";
+      
+      const iterationsSlider = iterationsContainer.createEl("input", { 
+        type: "range",
+        cls: "tsne-param-slider"
+      });
+      iterationsSlider.setAttribute("min", "250");
+      iterationsSlider.setAttribute("max", "2000");
+      iterationsSlider.setAttribute("step", "250");
+      iterationsSlider.setAttribute("value", plugin.settings.iterations.toString());
+      
+      iterationsSlider.addEventListener("input", async (e) => {
+        const value = parseInt((e.target as HTMLInputElement).value);
+        iterationsValue.textContent = value.toString();
+        plugin.settings.iterations = value;
+        await plugin.saveSettings();
+      });
+      
+      // Action buttons
       const runButton = actionBar.createEl("button", { text: "Run Analysis", cls: "mod-cta" });
       runButton.addEventListener("click", () => {
         // Get the plugin instance and run t-SNE
-        const plugin = (this.app as any).plugins.plugins["vibe-boi"] as VibeBoyPlugin;
         plugin.runTSNE();
       });
       
       const suggestLinksButton = actionBar.createEl("button", { text: "Suggest Links", cls: "mod-cta" });
       suggestLinksButton.addEventListener("click", () => {
-        // Get the plugin instance and suggest links
-        const plugin = (this.app as any).plugins.plugins["vibe-boi"] as VibeBoyPlugin;
+        // Suggest links
         plugin.suggestLinks();
       });
       
@@ -558,13 +633,32 @@ class TSNEView extends ItemView {
     style.textContent = `
       .tsne-header {
         display: flex;
-        justify-content: space-between;
-        align-items: center;
+        flex-direction: column;
+        margin-bottom: 1rem;
+      }
+      .tsne-header h2 {
         margin-bottom: 1rem;
       }
       .tsne-actions {
         display: flex;
         gap: 10px;
+        margin-top: 1rem;
+        align-self: flex-end;
+      }
+      .tsne-param-panel {
+        background-color: var(--background-secondary);
+        padding: 10px;
+        border-radius: 4px;
+        margin-bottom: 10px;
+      }
+      .tsne-param-slider {
+        width: 150px;
+      }
+      .tsne-param-value {
+        font-weight: bold;
+        min-width: 30px;
+        display: inline-block;
+        text-align: center;
       }
       .tsne-info {
         margin-bottom: 1rem;
@@ -590,6 +684,21 @@ class TSNEView extends ItemView {
         margin: 0;
         font-size: 0.9rem;
         opacity: 0.8;
+      }
+      .tsne-control-panel {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 10px;
+      }
+      .tsne-button-group button {
+        transition: background-color 0.2s, color 0.2s;
+      }
+      .tsne-button-group button:first-child {
+        border-radius: 4px 0 0 4px;
+      }
+      .tsne-button-group button:last-child {
+        border-radius: 0 4px 4px 0;
       }
     `;
     document.head.appendChild(style);
@@ -1058,24 +1167,7 @@ interface TSNEResult {
   cluster_terms: ClusterInfo;
 }
 
-class TSNEVisualizer {
-  private container: HTMLElement;
-  private canvas: HTMLCanvasElement;
-  private ctx: CanvasRenderingContext2D;
-  private result: TSNEResult | null = null;
-  private width = 800;
-  private height = 600;
-  private pointRadius = 10;
-  private mouseX = 0;
-  private mouseY = 0;
-  private scale = 1;
-  private offsetX = 0;
-  private offsetY = 0;
-  private isDragging = false;
-  private lastX = 0;
-  private lastY = 0;
-  private hoveredPoint: TSNEPoint | null = null;
-  private openCallback: (path: string) => void;
+// TSNEVisualizer is now imported from visualization.ts
 
   constructor(container: HTMLElement, openCallback: (path: string) => void) {
     this.container = container;
