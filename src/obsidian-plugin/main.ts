@@ -1,5 +1,382 @@
-import { App, ItemView, Modal, Notice, Plugin, PluginSettingTab, Setting, TFile, WorkspaceLeaf } from 'obsidian';
+import { App, ItemView, Modal, Notice, Plugin, PluginSettingTab, Setting, TFile, WorkspaceLeaf, TextAreaComponent, ButtonComponent } from 'obsidian';
 import * as TSNE from 'tsne-js';
+
+// Interface for note connections
+interface NoteConnection {
+  sourceNote: TSNEPoint;
+  targetNote: TSNEPoint;
+  similarity: number;
+  commonTerms: string[];
+  clusterTerms: string[];
+  reason: string;
+  llmDescription?: string;
+}
+
+// Modal for displaying and processing suggested links
+class SuggestedLinksModal extends Modal {
+  private connections: NoteConnection[];
+  private plugin: VibeBoyPlugin;
+  private selectedConnectionIndex: number = 0;
+  private processingConnection: boolean = false;
+  
+  constructor(app: App, connections: NoteConnection[], plugin: VibeBoyPlugin) {
+    super(app);
+    this.connections = connections;
+    this.plugin = plugin;
+  }
+  
+  async onOpen() {
+    const { contentEl } = this;
+    
+    // Set modal title
+    contentEl.createEl('h2', { text: 'Suggested Note Connections' });
+    contentEl.createEl('p', { 
+      text: 'Below are potential connections between notes based on content similarity. ' +
+            'Select a connection and generate a description to create a link between the notes.'
+    });
+    
+    // Create container for connections list
+    const connectionsContainer = contentEl.createDiv({ cls: 'connections-container' });
+    
+    // Create container for selected connection details
+    const detailsContainer = contentEl.createDiv({ cls: 'connection-details' });
+    
+    // Add some CSS
+    const style = document.createElement('style');
+    style.textContent = `
+      .connections-container {
+        max-height: 150px;
+        overflow-y: auto;
+        margin-bottom: 15px;
+        border: 1px solid var(--background-modifier-border);
+        border-radius: 4px;
+      }
+      .connection-item {
+        padding: 8px 12px;
+        cursor: pointer;
+        border-bottom: 1px solid var(--background-modifier-border);
+      }
+      .connection-item:hover {
+        background-color: var(--background-secondary);
+      }
+      .connection-item.selected {
+        background-color: var(--interactive-accent);
+        color: var(--text-on-accent);
+      }
+      .connection-details {
+        padding: 10px;
+        border: 1px solid var(--background-modifier-border);
+        border-radius: 4px;
+        margin-bottom: 15px;
+      }
+      .connection-stats {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 10px;
+      }
+      .generate-button {
+        margin-top: 10px;
+        margin-bottom: 10px;
+      }
+      .llm-description {
+        margin-top: 10px;
+        width: 100%;
+        min-height: 100px;
+      }
+      .button-container {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 15px;
+      }
+    `;
+    document.head.appendChild(style);
+    
+    // Render connections list
+    this.renderConnectionsList(connectionsContainer);
+    
+    // Render details for the first connection
+    this.renderConnectionDetails(detailsContainer, this.connections[0]);
+    
+    // Focus the first connection
+    this.selectConnection(0);
+  }
+  
+  private renderConnectionsList(container: HTMLElement) {
+    container.empty();
+    
+    this.connections.forEach((connection, index) => {
+      const item = container.createDiv({ cls: 'connection-item' });
+      if (index === this.selectedConnectionIndex) {
+        item.addClass('selected');
+      }
+      
+      const sourceTitle = connection.sourceNote.title;
+      const targetTitle = connection.targetNote.title;
+      const similarity = Math.round(connection.similarity);
+      
+      item.createEl('div', { text: `${sourceTitle} ↔ ${targetTitle} (${similarity}% similarity)` });
+      
+      item.addEventListener('click', () => {
+        this.selectConnection(index);
+      });
+    });
+  }
+  
+  private renderConnectionDetails(container: HTMLElement, connection: NoteConnection) {
+    container.empty();
+    
+    const sourceNote = connection.sourceNote;
+    const targetNote = connection.targetNote;
+    
+    // Note titles and paths
+    container.createEl('h3', { text: `Connection: ${sourceNote.title} ↔ ${targetNote.title}` });
+    container.createEl('div', { text: `Source: ${sourceNote.path}` });
+    container.createEl('div', { text: `Target: ${targetNote.path}` });
+    
+    // Stats
+    const statsDiv = container.createDiv({ cls: 'connection-stats' });
+    statsDiv.createEl('div', { text: `Similarity: ${Math.round(connection.similarity)}%` });
+    statsDiv.createEl('div', { text: `${sourceNote.wordCount || '?'} words / ${targetNote.wordCount || '?'} words` });
+    
+    // Shared terms
+    if (connection.commonTerms.length > 0) {
+      container.createEl('div', { text: `Common terms: ${connection.commonTerms.join(', ')}` });
+    }
+    
+    // Cluster terms
+    if (connection.clusterTerms.length > 0) {
+      container.createEl('div', { text: `Cluster terms: ${connection.clusterTerms.join(', ')}` });
+    }
+    
+    // Reason for connection
+    container.createEl('div', { text: `Connection reason: ${connection.reason}` });
+    
+    // Generate description button
+    const generateButton = new ButtonComponent(container)
+      .setButtonText('Generate Connection Description')
+      .setClass('generate-button mod-cta')
+      .onClick(async () => {
+        await this.generateLLMDescription(connection);
+      });
+    
+    if (this.processingConnection) {
+      generateButton.setDisabled(true);
+      generateButton.setButtonText('Generating...');
+    }
+    
+    // Description text area
+    if (connection.llmDescription) {
+      const descriptionContainer = container.createDiv();
+      descriptionContainer.createEl('h4', { text: 'Connection Description:' });
+      
+      const textArea = new TextAreaComponent(descriptionContainer)
+        .setValue(connection.llmDescription)
+        .setPlaceholder('Connection description will appear here...');
+      
+      textArea.inputEl.addClass('llm-description');
+      
+      // Create button
+      const buttonContainer = container.createDiv({ cls: 'button-container' });
+      
+      new ButtonComponent(buttonContainer)
+        .setButtonText('Create Link')
+        .setClass('mod-cta')
+        .onClick(async () => {
+          this.createLink(connection, textArea.getValue());
+        });
+      
+      new ButtonComponent(buttonContainer)
+        .setButtonText('Edit Description')
+        .onClick(() => {
+          textArea.setDisabled(false);
+          textArea.inputEl.focus();
+        });
+    }
+  }
+  
+  private selectConnection(index: number) {
+    if (index < 0 || index >= this.connections.length) return;
+    
+    this.selectedConnectionIndex = index;
+    const connectionContainer = this.contentEl.querySelector('.connections-container') as HTMLElement;
+    const detailsContainer = this.contentEl.querySelector('.connection-details') as HTMLElement;
+    
+    if (connectionContainer && detailsContainer) {
+      this.renderConnectionsList(connectionContainer);
+      this.renderConnectionDetails(detailsContainer, this.connections[index]);
+    }
+  }
+  
+  private async generateLLMDescription(connection: NoteConnection) {
+    if (this.processingConnection) return;
+    
+    this.processingConnection = true;
+    const detailsContainer = this.contentEl.querySelector('.connection-details') as HTMLElement;
+    this.renderConnectionDetails(detailsContainer, connection);
+    
+    try {
+      // Fetch source and target note content
+      const sourceFile = this.app.vault.getAbstractFileByPath(connection.sourceNote.path);
+      const targetFile = this.app.vault.getAbstractFileByPath(connection.targetNote.path);
+      
+      if (!(sourceFile instanceof TFile) || !(targetFile instanceof TFile)) {
+        throw new Error('Could not find note files');
+      }
+      
+      const sourceContent = await this.app.vault.read(sourceFile);
+      const targetContent = await this.app.vault.read(targetFile);
+      
+      // Prepare data for LLM call
+      const data = {
+        sourceNote: {
+          title: connection.sourceNote.title,
+          content: sourceContent.substring(0, 1000), // Limit to first 1000 chars
+          topTerms: connection.sourceNote.top_terms
+        },
+        targetNote: {
+          title: connection.targetNote.title,
+          content: targetContent.substring(0, 1000), // Limit to first 1000 chars
+          topTerms: connection.targetNote.top_terms
+        },
+        commonTerms: connection.commonTerms,
+        clusterTerms: connection.clusterTerms,
+        reason: connection.reason
+      };
+      
+      // Call the LLM service
+      const description = await this.callLLMService(data);
+      
+      // Update the connection with the generated description
+      connection.llmDescription = description;
+      
+      // Update the UI
+      this.processingConnection = false;
+      const detailsContainer = this.contentEl.querySelector('.connection-details') as HTMLElement;
+      this.renderConnectionDetails(detailsContainer, connection);
+      
+    } catch (error) {
+      this.processingConnection = false;
+      console.error('Error generating description:', error);
+      new Notice(`Failed to generate description: ${error.message}`);
+      
+      // Update UI to show error
+      const detailsContainer = this.contentEl.querySelector('.connection-details') as HTMLElement;
+      this.renderConnectionDetails(detailsContainer, connection);
+    }
+  }
+  
+  private async callLLMService(data: any): Promise<string> {
+    try {
+      // Try to connect to the local LLM API server
+      const sourceTitle = data.sourceNote.title;
+      const targetTitle = data.targetNote.title;
+      const sourceContent = data.sourceNote.content;
+      const targetContent = data.targetNote.content;
+      const commonTerms = data.commonTerms.join(', ');
+      const clusterTerms = data.clusterTerms.join(', ');
+      
+      // First, try to use the Python server's LLM integration
+      const response = await fetch('http://127.0.0.1:1234/generate_connection', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          source_note: {
+            title: sourceTitle,
+            content: sourceContent,
+            terms: data.sourceNote.topTerms
+          },
+          target_note: {
+            title: targetTitle,
+            content: targetContent,
+            terms: data.targetNote.topTerms
+          },
+          common_terms: data.commonTerms,
+          cluster_terms: data.clusterTerms
+        })
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        if (result.description) {
+          return result.description;
+        }
+      }
+      
+      // If server call fails or not available, use fallback logic
+      console.log("Using fallback connection description generation");
+      
+      // Create a template-based description (fallback)
+      let description = '';
+      
+      if (commonTerms) {
+        description += `These notes share conceptual overlap around ${commonTerms}. `;
+      } else {
+        description += `These notes appear to be conceptually related. `;
+      }
+      
+      description += `The note "${targetTitle}" provides complementary information that expands on ideas in "${sourceTitle}"`;
+      
+      if (clusterTerms) {
+        description += `, particularly regarding ${clusterTerms}.`;
+      } else {
+        description += '.';
+      }
+      
+      return description;
+    } catch (error) {
+      console.error('Error calling LLM service:', error);
+      
+      // Return a basic description as fallback
+      return `These notes appear to be related in their content. The note "${data.targetNote.title}" complements "${data.sourceNote.title}" with additional relevant information.`;
+    }
+  }
+  
+  private async createLink(connection: NoteConnection, description: string) {
+    if (!description || description.trim().length === 0) {
+      new Notice('Please generate or provide a description for the connection');
+      return;
+    }
+    
+    const success = await this.plugin.createNoteLink(
+      connection.sourceNote.path,
+      connection.targetNote.path,
+      description
+    );
+    
+    if (success) {
+      new Notice(`Successfully linked ${connection.sourceNote.title} to ${connection.targetNote.title}`);
+      
+      // Remove this connection from the list
+      this.connections = this.connections.filter((_, index) => index !== this.selectedConnectionIndex);
+      
+      if (this.connections.length === 0) {
+        // No more connections, close the modal
+        this.close();
+        return;
+      }
+      
+      // Select the next connection
+      this.selectedConnectionIndex = Math.min(this.selectedConnectionIndex, this.connections.length - 1);
+      
+      // Update the UI
+      const connectionContainer = this.contentEl.querySelector('.connections-container') as HTMLElement;
+      const detailsContainer = this.contentEl.querySelector('.connection-details') as HTMLElement;
+      
+      this.renderConnectionsList(connectionContainer);
+      this.renderConnectionDetails(
+        detailsContainer, 
+        this.connections[this.selectedConnectionIndex]
+      );
+    }
+  }
+  
+  onClose() {
+    const { contentEl } = this;
+    contentEl.empty();
+  }
+}
 
 // Define the view type for our visualization
 const VIEW_TYPE_TSNE = "tsne-visualization";
@@ -60,6 +437,13 @@ class TSNEView extends ItemView {
         // Get the plugin instance and run t-SNE
         const plugin = (this.app as any).plugins.plugins["vibe-boi"] as VibeBoyPlugin;
         plugin.runTSNE();
+      });
+      
+      const suggestLinksButton = actionBar.createEl("button", { text: "Suggest Links", cls: "mod-cta" });
+      suggestLinksButton.addEventListener("click", () => {
+        // Get the plugin instance and suggest links
+        const plugin = (this.app as any).plugins.plugins["vibe-boi"] as VibeBoyPlugin;
+        plugin.suggestLinks();
       });
       
       const selectFolderButton = actionBar.createEl("button", { text: "Select Folder" });
@@ -299,6 +683,9 @@ export default class VibeBoyPlugin extends Plugin {
         });
       }
       
+      // Store the result for later use in link suggestions
+      this.lastResult = result;
+      
       // Visualize the result
       this.visualizeResult(result);
       
@@ -360,6 +747,178 @@ export default class VibeBoyPlugin extends Plugin {
     // Create and use the visualizer directly
     const visualizer = new TSNEVisualizer(container, openCallback);
     visualizer.setData(result);
+  }
+  
+  // Method to suggest links between notes using LLM
+  async suggestLinks() {
+    if (!this.lastResult || !this.lastResult.points || this.lastResult.points.length === 0) {
+      new Notice('Please run t-SNE analysis first to generate note data');
+      return;
+    }
+    
+    // Show a notice that we're starting the process
+    new Notice('Finding potential note connections...');
+    
+    try {
+      // Find potential connections based on t-SNE proximity and clustering
+      const connections = this.findPotentialConnections(this.lastResult);
+      
+      if (connections.length === 0) {
+        new Notice('No strong connections found between notes');
+        return;
+      }
+      
+      // Create a modal to display the suggested connections
+      const modal = new SuggestedLinksModal(this.app, connections, this);
+      modal.open();
+      
+    } catch (error) {
+      console.error('Error suggesting links:', error);
+      new Notice(`Error suggesting links: ${error.message}`);
+    }
+  }
+  
+  // Store the last result for use in link suggestions
+  private lastResult: any = null;
+  
+  // Find potential connections between notes based on t-SNE results
+  private findPotentialConnections(result: any): NoteConnection[] {
+    const connections: NoteConnection[] = [];
+    const points = result.points as TSNEPoint[];
+    
+    // 1. Find notes in the same cluster
+    const clusterGroups: { [key: number]: TSNEPoint[] } = {};
+    
+    // Group points by cluster
+    for (const point of points) {
+      if (point.cluster === -1) continue; // Skip unclustered points
+      
+      if (!clusterGroups[point.cluster]) {
+        clusterGroups[point.cluster] = [];
+      }
+      
+      clusterGroups[point.cluster].push(point);
+    }
+    
+    // For each cluster, find the most central notes
+    Object.entries(clusterGroups).forEach(([clusterId, clusterPoints]) => {
+      // Only consider clusters with at least 2 notes
+      if (clusterPoints.length < 2) return;
+      
+      // Find most central notes in the cluster (closest to cluster center)
+      clusterPoints.sort((a, b) => {
+        const distA = a.distanceToCenter || Infinity;
+        const distB = b.distanceToCenter || Infinity;
+        return distA - distB;
+      });
+      
+      // Take the most central notes
+      const centralNotes = clusterPoints.slice(0, Math.min(3, clusterPoints.length));
+      
+      // Create connections between the central notes
+      for (let i = 0; i < centralNotes.length; i++) {
+        for (let j = i + 1; j < centralNotes.length; j++) {
+          const noteA = centralNotes[i];
+          const noteB = centralNotes[j];
+          
+          // Skip if the two notes are very far apart in the visualization
+          const distance = Math.sqrt(
+            Math.pow(noteA.x - noteB.x, 2) + Math.pow(noteA.y - noteB.y, 2)
+          );
+          
+          if (distance > 0.5) continue; // Skip if too far
+          
+          // Calculate a similarity score (0-100)
+          const similarity = 100 - Math.min(100, distance * 100);
+          
+          // Find common terms
+          const commonTerms = noteA.top_terms.filter(term => 
+            noteB.top_terms.includes(term)
+          );
+          
+          connections.push({
+            sourceNote: noteA,
+            targetNote: noteB,
+            similarity: similarity,
+            commonTerms: commonTerms,
+            clusterTerms: result.cluster_terms?.[clusterId]?.slice(0, 5).map((t: any) => t.term) || [],
+            reason: `Both notes are central in cluster ${clusterId}`
+          });
+        }
+      }
+    });
+    
+    // 2. Find notes that are close in the t-SNE projection but may be in different clusters
+    for (let i = 0; i < points.length; i++) {
+      for (let j = i + 1; j < points.length; j++) {
+        const noteA = points[i];
+        const noteB = points[j];
+        
+        // Skip notes in the same cluster (already handled above)
+        if (noteA.cluster !== -1 && noteA.cluster === noteB.cluster) continue;
+        
+        // Calculate Euclidean distance in t-SNE space
+        const distance = Math.sqrt(
+          Math.pow(noteA.x - noteB.x, 2) + Math.pow(noteA.y - noteB.y, 2)
+        );
+        
+        // Only consider very close notes
+        if (distance > 0.2) continue;
+        
+        // Calculate a similarity score (0-100)
+        const similarity = 100 - Math.min(100, distance * 200);
+        
+        // Find common terms
+        const commonTerms = noteA.top_terms.filter(term => 
+          noteB.top_terms.includes(term)
+        );
+        
+        // Only include if they have common terms
+        if (commonTerms.length > 0) {
+          connections.push({
+            sourceNote: noteA,
+            targetNote: noteB,
+            similarity: similarity,
+            commonTerms: commonTerms,
+            clusterTerms: [],
+            reason: `Notes are very close in the visualization and share common terms`
+          });
+        }
+      }
+    }
+    
+    // Sort connections by similarity (highest first)
+    connections.sort((a, b) => b.similarity - a.similarity);
+    
+    // Return top 10 connections to avoid overwhelming the user
+    return connections.slice(0, 10);
+  }
+  
+  // Create a link between two notes
+  async createNoteLink(sourceNotePath: string, targetNotePath: string, description: string) {
+    try {
+      // Get the source file
+      const sourceFile = this.app.vault.getAbstractFileByPath(sourceNotePath);
+      if (!(sourceFile instanceof TFile)) {
+        throw new Error(`Source file not found: ${sourceNotePath}`);
+      }
+      
+      // Read the file content
+      const sourceContent = await this.app.vault.read(sourceFile);
+      
+      // Generate the link text with the formatted connection description
+      const targetFileName = targetNotePath.split('/').pop() || targetNotePath;
+      const linkText = `\n\n## Related Notes\n\n- [[${targetFileName}]] - ${description.trim()}\n`;
+      
+      // Append the link to the source file
+      await this.app.vault.modify(sourceFile, sourceContent + linkText);
+      
+      return true;
+    } catch (error) {
+      console.error('Error creating note link:', error);
+      new Notice(`Failed to create link: ${error.message}`);
+      return false;
+    }
   }
 }
 
