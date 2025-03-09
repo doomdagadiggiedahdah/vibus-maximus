@@ -28,7 +28,7 @@
             }
           },
           {
-            "id": "12bedab29a0df9e0",
+            "id": "515b731f8ef8905e",
             "type": "leaf",
             "state": {
               "type": "markdown",
@@ -42,27 +42,7 @@
             }
           }
         ],
-        "currentTab": 2
-      },
-      {
-        "id": "5fee431fa2dc2edf",
-        "type": "tabs",
-        "children": [
-          {
-            "id": "4fd9f3a432ccb2f7",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "note043_hat_theory.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "note043_hat_theory"
-            }
-          }
-        ]
+        "currentTab": 1
       }
     ],
     "direction": "vertical"
@@ -207,8 +187,10 @@
       "command-palette:Open command palette": false
     }
   },
-  "active": "4fd9f3a432ccb2f7",
+  "active": "f12556752555194c",
   "lastOpenFiles": [
+    "note043_hat_theory.md",
+    "note028_alternative_milk.md",
     "note033_haircut_theory.md",
     "note027_music_for_plants.md",
     "note042_elevator_music.md",
@@ -219,7 +201,6 @@
     "note046_double_life.md",
     "note045_backwards_walking.md",
     "note044_disappearing_objects.md",
-    "note043_hat_theory.md",
     "note041_secret_room.md",
     "note040_sidewalk_cracks.md",
     "note039_sleep_position.md",
@@ -232,7 +213,6 @@
     "note031_fortune_cookie_conspiracy.md",
     "note030_bookstore_portal.md",
     "note029_pocket_universe.md",
-    "note028_alternative_milk.md",
     "note026_traffic_light_sequence.md",
     "note025_gravity_testing.md"
   ]
