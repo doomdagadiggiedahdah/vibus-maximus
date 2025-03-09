@@ -5,7 +5,8 @@
   "main": "src/obsidian-plugin/main.js",
   "scripts": {
     "dev": "rollup --config rollup.config.js -w",
-    "build": "rollup --config rollup.config.js"
+    "build": "rollup --config rollup.config.js",
+    "deploy": "npm run build && cp manifest/manifest.json test-notes/.obsidian/plugins/vibe-boi/"
   },
   "keywords": [
     "obsidian",
